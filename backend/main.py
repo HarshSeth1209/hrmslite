@@ -25,6 +25,12 @@ app.include_router(attendance.router)
 app.include_router(dashboard.router)
 
 
+@app.on_event("startup")
+def startup_seed():
+    from seed import seed_db
+    seed_db()
+
+
 @app.get("/health", tags=["health"])
 def health_check():
     return {"status": "ok", "message": "HRMS Lite API is running"}

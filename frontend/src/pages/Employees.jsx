@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
+import { Users, Trash2 } from "lucide-react";
 import { getEmployees, createEmployee, deleteEmployee } from "../api/employees";
 import Modal from "../components/Modal";
+import Dropdown from "../components/Dropdown";
 import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
 import Toast from "../components/Toast";
@@ -58,7 +60,7 @@ export default function Employees() {
         e.preventDefault();
         setFormError("");
         if (!form.employee_id.trim() || !form.full_name.trim() || !form.email.trim() || !form.department) {
-            setFormError("All fields are required.");
+            setFormError("All fields are required. Fill in every field and try again.");
             return;
         }
         setFormLoading(true);
@@ -100,7 +102,7 @@ export default function Employees() {
 
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Employees</h1>
+                    <h2 className="page-title">Employees</h2>
                     <p className="page-subtitle">Manage your workforce</p>
                 </div>
                 <button className="btn btn-primary" onClick={() => { setShowModal(true); setFormError(""); }}>
@@ -111,10 +113,10 @@ export default function Employees() {
             {loading ? (
                 <Spinner />
             ) : error ? (
-                <div className="error-state"><span>⚠</span> {error}</div>
+                <div className="error-state"><span aria-hidden>⚠</span> {error}</div>
             ) : employees.length === 0 ? (
                 <EmptyState
-                    icon="👥"
+                    icon={<Users size={40} aria-hidden />}
                     title="No employees found"
                     description="Click 'Add Employee' to get started."
                 />
@@ -145,9 +147,12 @@ export default function Employees() {
                                     </td>
                                     <td>
                                         <button
+                                            type="button"
                                             className="btn btn-danger btn-sm"
                                             onClick={() => setDeleteTarget(emp)}
+                                            aria-label={`Delete ${emp.full_name}`}
                                         >
+                                            <Trash2 size={14} aria-hidden />
                                             Delete
                                         </button>
                                     </td>
@@ -161,56 +166,61 @@ export default function Employees() {
             {/* Add Employee Modal */}
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Add Employee">
                 <form onSubmit={handleAdd} className="form">
-                    {formError && <div className="form-error">{formError}</div>}
+                    {formError && (
+                        <div className="form-error" role="alert" aria-live="polite">
+                            {formError}
+                        </div>
+                    )}
                     <div className="form-group">
-                        <label className="form-label">Employee ID *</label>
+                        <label className="form-label" htmlFor="emp-id">Employee ID *</label>
                         <input
                             id="emp-id"
                             className="form-input"
                             name="employee_id"
-                            placeholder="e.g. EMP001"
+                            autoComplete="off"
+                            spellCheck={false}
+                            placeholder="e.g. EMP001…"
                             value={form.employee_id}
                             onChange={handleFormChange}
                             autoFocus
                         />
                     </div>
                     <div className="form-group">
-                        <label className="form-label">Full Name *</label>
+                        <label className="form-label" htmlFor="emp-name">Full Name *</label>
                         <input
                             id="emp-name"
                             className="form-input"
                             name="full_name"
-                            placeholder="John Doe"
+                            autoComplete="name"
+                            placeholder="e.g. John Doe…"
                             value={form.full_name}
                             onChange={handleFormChange}
                         />
                     </div>
                     <div className="form-group">
-                        <label className="form-label">Email Address *</label>
+                        <label className="form-label" htmlFor="emp-email">Email Address *</label>
                         <input
                             id="emp-email"
                             className="form-input"
                             type="email"
                             name="email"
-                            placeholder="john@company.com"
+                            autoComplete="email"
+                            spellCheck={false}
+                            placeholder="e.g. john@company.com…"
                             value={form.email}
                             onChange={handleFormChange}
                         />
                     </div>
                     <div className="form-group">
-                        <label className="form-label">Department *</label>
-                        <select
+                        <label className="form-label" htmlFor="emp-dept">Department *</label>
+                        <Dropdown
                             id="emp-dept"
-                            className="form-input"
                             name="department"
+                            placeholder="Select department"
+                            options={DEPARTMENTS.map((d) => ({ value: d, label: d }))}
                             value={form.department}
                             onChange={handleFormChange}
-                        >
-                            <option value="">Select department</option>
-                            {DEPARTMENTS.map((d) => (
-                                <option key={d} value={d}>{d}</option>
-                            ))}
-                        </select>
+                        />
                     </div>
                     <div className="form-actions">
                         <button
@@ -248,6 +258,7 @@ export default function Employees() {
                             Cancel
                         </button>
                         <button
+                            type="button"
                             className="btn btn-danger"
                             onClick={handleDelete}
                             disabled={deleteLoading}

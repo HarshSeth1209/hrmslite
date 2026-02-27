@@ -1,7 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
+import { CalendarCheck } from "lucide-react";
 import { getEmployees } from "../api/employees";
 import { markAttendance, getAttendance } from "../api/attendance";
 import Modal from "../components/Modal";
+import Dropdown from "../components/Dropdown";
+import DatePicker from "../components/DatePicker";
 import Badge from "../components/Badge";
 import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
@@ -33,7 +36,7 @@ export default function Attendance() {
         } finally {
             setLoadingEmps(false);
         }
-    }, []);
+    }, [selectedEmp]);
 
     const fetchRecords = useCallback(async () => {
         if (!selectedEmp) return;
@@ -42,7 +45,11 @@ export default function Attendance() {
             const data = await getAttendance(selectedEmp.employee_id, dateFilter || null);
             setRecords(data);
         } catch (e) {
-            setToast({ message: e.message, type: "error" });
+            if (e.message && e.message.includes("not found")) {
+                setRecords([]);
+            } else {
+                setToast({ message: e.message, type: "error" });
+            }
         } finally {
             setLoadingRec(false);
         }
@@ -55,7 +62,7 @@ export default function Attendance() {
         e.preventDefault();
         setFormError("");
         if (!form.date) {
-            setFormError("Date is required.");
+            setFormError("Date is required. Pick a date and try again.");
             return;
         }
         setFormLoading(true);
@@ -92,11 +99,11 @@ export default function Attendance() {
 
             <div className="page-header">
                 <div>
-                    <h1 className="page-title">Attendance</h1>
+                    <h2 className="page-title">Attendance</h2>
                     <p className="page-subtitle">Track daily attendance records</p>
                 </div>
                 {selectedEmp && (
-                    <button className="btn btn-primary" onClick={openModal}>
+                    <button type="button" className="btn btn-primary" onClick={openModal}>
                         + Mark Attendance
                     </button>
                 )}
@@ -106,7 +113,7 @@ export default function Attendance() {
                 <Spinner />
             ) : employees.length === 0 ? (
                 <EmptyState
-                    icon="📅"
+                    icon={<CalendarCheck size={40} aria-hidden />}
                     title="No employees yet"
                     description="Add employees first before tracking attendance."
                 />
@@ -115,36 +122,34 @@ export default function Attendance() {
                     {/* Controls */}
                     <div className="attendance-controls">
                         <div className="form-group" style={{ margin: 0 }}>
-                            <label className="form-label">Select Employee</label>
-                            <select
+                            <label className="form-label" htmlFor="att-emp-select">Select Employee</label>
+                            <Dropdown
                                 id="att-emp-select"
-                                className="form-input"
+                                options={employees.map((emp) => ({
+                                    value: emp.employee_id,
+                                    label: `${emp.full_name} (${emp.employee_id})`,
+                                }))}
                                 value={selectedEmp?.employee_id || ""}
                                 onChange={(e) => {
                                     const emp = employees.find((x) => x.employee_id === e.target.value);
                                     setSelectedEmp(emp);
                                     setDateFilter("");
                                 }}
-                            >
-                                {employees.map((emp) => (
-                                    <option key={emp.id} value={emp.employee_id}>
-                                        {emp.full_name} ({emp.employee_id})
-                                    </option>
-                                ))}
-                            </select>
+                                placeholder="Select employee"
+                            />
                         </div>
                         <div className="form-group" style={{ margin: 0 }}>
-                            <label className="form-label">Filter by Date</label>
-                            <input
+                            <label className="form-label" htmlFor="att-date-filter">Filter by Date</label>
+                            <DatePicker
                                 id="att-date-filter"
-                                className="form-input"
-                                type="date"
                                 value={dateFilter}
                                 onChange={(e) => setDateFilter(e.target.value)}
+                                placeholder="All dates"
                             />
                         </div>
                         {dateFilter && (
                             <button
+                                type="button"
                                 className="btn btn-ghost"
                                 style={{ alignSelf: "flex-end" }}
                                 onClick={() => setDateFilter("")}
@@ -171,7 +176,7 @@ export default function Attendance() {
                         <Spinner />
                     ) : records.length === 0 ? (
                         <EmptyState
-                            icon="📅"
+                            icon={<CalendarCheck size={40} aria-hidden />}
                             title="No attendance records"
                             description={
                                 dateFilter
@@ -217,13 +222,15 @@ export default function Attendance() {
                 title={`Mark Attendance – ${selectedEmp?.full_name || ""}`}
             >
                 <form onSubmit={handleMarkAttendance} className="form">
-                    {formError && <div className="form-error">{formError}</div>}
+                    {formError && (
+                        <div className="form-error" role="alert" aria-live="polite">
+                            {formError}
+                        </div>
+                    )}
                     <div className="form-group">
-                        <label className="form-label">Date *</label>
-                        <input
+                        <label className="form-label" htmlFor="att-date">Date *</label>
+                        <DatePicker
                             id="att-date"
-                            className="form-input"
-                            type="date"
                             value={form.date}
                             onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
                             max={today}
@@ -231,8 +238,8 @@ export default function Attendance() {
                         />
                     </div>
                     <div className="form-group">
-                        <label className="form-label">Status *</label>
-                        <div className="radio-group">
+                        <span className="form-label" id="att-status-label">Status *</span>
+                        <div className="radio-group" role="group" aria-labelledby="att-status-label">
                             {["Present", "Absent"].map((s) => (
                                 <label key={s} className="radio-label">
                                     <input

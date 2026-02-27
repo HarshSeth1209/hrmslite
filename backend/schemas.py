@@ -11,7 +11,7 @@ class EmployeeCreate(BaseModel):
     email: EmailStr
     department: str
 
-    @field_validator("employee_id", "full_name", "department", mode="before")
+    @field_validator("employee_id", "full_name", "department")
     @classmethod
     def not_empty(cls, v: str) -> str:
         if not v or not v.strip():
@@ -20,6 +20,8 @@ class EmployeeCreate(BaseModel):
 
 
 class EmployeeResponse(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     employee_id: str
     full_name: str
@@ -27,8 +29,6 @@ class EmployeeResponse(BaseModel):
     department: str
     created_at: datetime
     present_days: int = 0
-
-    model_config = {"from_attributes": True}
 
 
 # ── Attendance ────────────────────────────────────────────────────────────────
@@ -40,6 +40,8 @@ class AttendanceCreate(BaseModel):
 
 
 class AttendanceResponse(BaseModel):
+    model_config = {"from_attributes": True}
+
     id: int
     employee_id: int          # FK int
     employee_str_id: str = "" # the human-readable employee_id
@@ -48,8 +50,6 @@ class AttendanceResponse(BaseModel):
     status: AttendanceStatus
     marked_at: datetime
 
-    model_config = {"from_attributes": True}
-
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
 
@@ -57,4 +57,5 @@ class DashboardSummary(BaseModel):
     total_employees: int
     present_today: int
     absent_today: int
+    unmarked_today: int
     total_attendance_records: int

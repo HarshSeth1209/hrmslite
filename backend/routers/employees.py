@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, and_
 from database import get_db
 from models import Employee, Attendance, AttendanceStatus
 from schemas import EmployeeCreate, EmployeeResponse
@@ -17,8 +17,10 @@ def list_employees(db: Session = Depends(get_db)):
         present_days = (
             db.query(func.count(Attendance.id))
             .filter(
-                Attendance.employee_id == emp.id,
-                Attendance.status == AttendanceStatus.present,
+                and_(
+                    Attendance.employee_id == emp.id,
+                    Attendance.status == AttendanceStatus.present,
+                )
             )
             .scalar()
         ) or 0

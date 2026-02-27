@@ -10,3 +10,6 @@ export const getAttendance = (employeeId, date = null) => {
 
 export const getDashboard = () =>
     client.get("/dashboard").then((r) => r.data);
+
+export const getWeeklyAttendance = () =>
+    client.get("/dashboard/weekly").then((r) => r.data);
